@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalScoreEl = document.getElementById('final-score');
 
     // Buttons
-    const easyBtn = document.getElementById('easyBtn');
+    
     const normalBtn = document.getElementById('normalBtn');
     const hardBtn = document.getElementById('hardBtn');
     const resetBtn = document.getElementById('resetBtn');
@@ -56,14 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setDifficulty(level) {
         currentDifficulty = level;
-        [easyBtn, normalBtn, hardBtn].forEach(btn => btn.classList.remove('selected'));
-        if (level === 'easy') easyBtn.classList.add('selected');
-        else if (level === 'normal') normalBtn.classList.add('selected');
+        [normalBtn, hardBtn].forEach(btn => btn.classList.remove('selected'));
+        if (level === 'normal') normalBtn.classList.add('selected');
         else if (level === 'hard') hardBtn.classList.add('selected');
 
         let colorCount;
         switch (level) {
-            case 'easy': colorCount = 3; break;
             case 'hard': colorCount = 5; break;
             case 'normal':
             default: colorCount = 4; break;
@@ -136,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Handlers ---
 
-    easyBtn.addEventListener('click', () => setDifficulty('easy'));
     normalBtn.addEventListener('click', () => setDifficulty('normal'));
     hardBtn.addEventListener('click', () => setDifficulty('hard'));
     resetBtn.addEventListener('click', () => setDifficulty(currentDifficulty));
@@ -465,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addScoreToHistory(finalScore, difficulty) {
         const difficultyText = {
-            'easy': '簡単',
             'normal': '普通',
             'hard': '難しい'
         }[difficulty];

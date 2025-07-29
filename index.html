@@ -8,34 +8,48 @@
 </head>
 <body>
     <h1>色合わせパズル</h1>
-    <div class="controls">
-        <label>難易度:</label>
-        <button id="easyBtn">簡単 (3色)</button>
-        <button id="normalBtn">普通 (4色)</button>
-        <button id="hardBtn">難しい (5色)</button>
-        <button id="resetBtn">リセット</button>
-        <button id="muteBtn">サウンドOFF</button>
-    </div>
-    <div id="game-board"></div>
-    <div class="info">
-        <p>スコア: <span id="score">0</span></p>
-        <p>残りクリック数: <span id="clicks">20</span></p>
-    </div>
-    <div id="game-over" class="hidden">
-        <h2>ゲームオーバー！</h2>
-        <p>最終スコア: <span id="final-score">0</span></p>
-        <button id="restartBtn">もう一度遊ぶ</button>
-    </div>
-    <div class="game-info-container">
-        <div class="rules">
-            <h3>ルール</h3>
-            <p>隣り合ったパネルを入れ替えて、同じ色・形のパネルを縦か横に3つ以上そろえると消えます。連鎖すると高得点！限られたクリック数でハイスコアを目指そう！</p>
+    <div id="game-content-wrapper">
+        <div id="rules-area">
+            <div class="rules">
+                <h3>ルール</h3>
+                <p>隣り合ったパネルを入れ替えて、同じ色・形のパネルを縦か横に3つ以上そろえると消えます。連鎖すると高得点！限られたクリック数でハイスコアを目指そう！</p>
+                <h3>特殊パネル</h3>
+                <h4>ボムパネル</h4>
+                <p>・出現条件: 5つ以上のパネルを一度に消すと、ボムパネルが出現します（連鎖中は出現しません）</p>
+                <p>・効果: ボムパネルを動かすと、そのパネルと周囲1マスのパネルが消えます。</p>
+                <h4>レインボーパネル</h4>
+                <p>・出現条件: 5連鎖以上を達成すると、ランダムなノーマルパネルがレインボーパネルに変化します。</p>
+                <p>・効果: レインボーパネルを動かすと、入れ替えたパネルと同じ色のパネルがすべて消えます。</p>
+                <h4>特殊パネル同士の組み合わせ</h4>
+                <p>・特殊パネル同士を入れ替えると、盤面上のすべてのパネルが消え、大量のスコアを獲得できます。</p>
+            </div>
         </div>
-        <div class="score-history">
-            <h3>スコア履歴</h3>
-            <ul id="score-history-list">
-                <!-- スコア履歴がここに表示されます -->
-            </ul>
+        <div id="main-game-area">
+            <div class="controls">
+                <label>難易度:</label>
+                <button id="normalBtn">普通 (4色)</button>
+                <button id="hardBtn">難しい (5色)</button>
+                <button id="resetBtn">リセット</button>
+                <button id="muteBtn">サウンドOFF</button>
+            </div>
+            <div id="game-board"></div>
+            <div class="info">
+                <p>スコア: <span id="score">0</span></p>
+                <p>残りクリック数: <span id="clicks">20</span></p>
+            </div>
+            <div id="game-over" class="hidden">
+                <h2>ゲームオーバー！</h2>
+                <p>最終スコア: <span id="final-score">0</span></p>
+                <button id="restartBtn">もう一度遊ぶ</button>
+            </div>
+        </div>
+        <div id="score-history-area">
+            <div class="score-history">
+                <h3>スコア履歴</h3>
+                <ul id="score-history-list">
+                    <!-- スコア履歴がここに表示されます -->
+                </ul>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

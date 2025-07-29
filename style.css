@@ -1,16 +1,46 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     background-color: #2c3e50;
     color: #ecf0f1;
     overflow: hidden; /* Prevents scrollbars during animations */
+    margin: 0; /* Remove default body margin */
+    display: flex; /* Use flexbox for main layout */
+    flex-direction: column; /* Stack h1 and game-content-wrapper vertically */
+    align-items: center; /* Center content horizontally */
+    min-height: 100vh; /* Full viewport height */
+    padding-top: 20px; /* Add some padding at the top */
 }
 
 h1 {
     color: #ecf0f1;
     text-shadow: 2px 2px 4px #000;
+    margin-bottom: 20px; /* Space below the title */
+}
+
+#game-content-wrapper {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    gap: 20px; /* Space between columns */
+    width: 100%;
+    max-width: 1200px; /* Max width for the entire game area */
+}
+
+#rules-area,
+#score-history-area {
+    flex: 1; /* Take equal space */
+    background-color: #34495e;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* Align top with controls */
+    margin-top: 70px; /* Adjust this value to align with controls */
+}
+
+#main-game-area {
+    flex: 2; /* Take more space for the game board */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .controls {
@@ -205,20 +235,22 @@ h1 {
     display: none;
 }
 
-.game-info-container {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    max-width: 800px;
-    margin-top: 20px;
-}
-
-.rules, .score-history {
+/* Rules and Score History */
+.rules {
     background-color: #34495e;
     padding: 15px;
     border-radius: 8px;
-    width: 45%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    /* Removed max-height and overflow-y */
+}
+
+.score-history {
+    background-color: #34495e;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    max-height: 250px; /* Keep max-height for scroll */
+    overflow-y: auto;  /* Keep scroll for score history */
 }
 
 .rules h3, .score-history h3 {
@@ -231,8 +263,6 @@ h1 {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 150px;
-    overflow-y: auto;
 }
 
 .score-history li {
