@@ -25,9 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Game Config
     const boardSize = 8;
-    const panelSize = 50;
+    
     const initialClicks = 20;
     let colors = [];
+
+    // Helper to get dynamic panel size
+    function getPanelSize() {
+        return board.offsetWidth / boardSize;
+    }
+
     const colorMap = {
         'red': '#ff4136',
         'blue': '#0074d9',
@@ -103,8 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const panel = document.createElement('div');
         panel.dataset.row = row;
         panel.dataset.col = col;
-        panel.style.top = `${row * panelSize}px`;
-        panel.style.left = `${col * panelSize}px`;
+        const currentPanelSize = getPanelSize();
+        panel.style.top = `${row * currentPanelSize}px`;
+        panel.style.left = `${col * currentPanelSize}px`;
 
         const panelInner = document.createElement('div');
         panelInner.classList.add('panel-inner');
@@ -324,10 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
             panel1.dataset.row = r2; panel1.dataset.col = c2;
             panel2.dataset.row = r1; panel2.dataset.col = c1;
 
-            panel1.style.top = `${r2 * panelSize}px`;
-            panel1.style.left = `${c2 * panelSize}px`;
-            panel2.style.top = `${r1 * panelSize}px`;
-            panel2.style.left = `${c1 * panelSize}px`;
+            const currentPanelSize = getPanelSize();
+            panel1.style.top = `${r2 * currentPanelSize}px`;
+            panel1.style.left = `${c2 * currentPanelSize}px`;
+            panel2.style.top = `${r1 * currentPanelSize}px`;
+            panel2.style.left = `${c1 * currentPanelSize}px`;
 
             setTimeout(resolve, 300);
         });
@@ -402,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     panelElements[newRow][c] = panel;
                     panelElements[r][c] = null;
                     panel.dataset.row = newRow;
-                    panel.style.top = `${newRow * panelSize}px`;
+                    panel.style.top = `${newRow * getPanelSize()}px`;
                     promises.push(new Promise(res => setTimeout(res, 500)));
                 }
             }
@@ -443,8 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const popup = document.createElement('div');
         popup.classList.add('score-popup');
         popup.textContent = `+${amount}`;
-        popup.style.left = `${col * panelSize + panelSize / 2}px`;
-        popup.style.top = `${row * panelSize + panelSize / 2}px`;
+        const currentPanelSize = getPanelSize();
+        popup.style.left = `${col * currentPanelSize + currentPanelSize / 2}px`;
+        popup.style.top = `${row * currentPanelSize + currentPanelSize / 2}px`;
         board.appendChild(popup);
 
         popup.addEventListener('animationend', () => {
@@ -490,4 +499,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initial Start ---
     setDifficulty('normal');
+
+    // Update panel positions on resize
+    function updatePanelPositions() {
+        const currentPanelSize = getPanelSize();
+        panelElements.flat().forEach(panel => {
+            if (panel) {
+                const r = parseInt(panel.dataset.row);
+                const c = parseInt(panel.dataset.col);
+                panel.style.top = `${r * currentPanelSize}px`;
+                panel.style.left = `${c * currentPanelSize}px`;
+            }
+        });
+    }
+
+    window.addEventListener('resize', updatePanelPositions);
 });
