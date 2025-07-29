@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>色合わせパズル</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>色合わせパズル</h1>
+    <div class="controls">
+        <label>難易度:</label>
+        <button id="easyBtn">簡単 (3色)</button>
+        <button id="normalBtn">普通 (4色)</button>
+        <button id="hardBtn">難しい (5色)</button>
+        <button id="resetBtn">リセット</button>
+        <button id="muteBtn">サウンドOFF</button>
+    </div>
+    <div id="game-board"></div>
+    <div class="info">
+        <p>スコア: <span id="score">0</span></p>
+        <p>残りクリック数: <span id="clicks">20</span></p>
+    </div>
+    <div id="game-over" class="hidden">
+        <h2>ゲームオーバー！</h2>
+        <p>最終スコア: <span id="final-score">0</span></p>
+        <button id="restartBtn">もう一度遊ぶ</button>
+    </div>
+    <div class="game-info-container">
+        <div class="rules">
+            <h3>ルール</h3>
+            <p>隣り合ったパネルを入れ替えて、同じ色・形のパネルを縦か横に3つ以上そろえると消えます。連鎖すると高得点！限られたクリック数でハイスコアを目指そう！</p>
+        </div>
+        <div class="score-history">
+            <h3>スコア履歴</h3>
+            <ul id="score-history-list">
+                <!-- スコア履歴がここに表示されます -->
+            </ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
