@@ -10,6 +10,7 @@ body {
     min-height: 100vh; /* Full viewport height */
     padding: 20px; /* Add some padding around the content */
     box-sizing: border-box;
+    font-size: 0.9em; /* Adjust base font size */
 }
 
 h1 {
@@ -205,6 +206,12 @@ h1 {
     background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
     border-radius: 50%;
     animation: spin 2s linear infinite;
+}
+
+.type-sealed .panel-inner {
+    background-color: #555; /* 暗めのグレー */
+    border: 3px dashed #ecf0f1; /* 破線ボーダーで封印感を出す */
+    opacity: 0.7; /* 少し透明にして、通常のパネルと区別しやすくする */
 }
 
 @keyframes spin {

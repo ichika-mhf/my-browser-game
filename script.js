@@ -44,7 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const panelTypes = {
         NORMAL: 'normal',
         BOMB: 'bomb',
-        RAINBOW: 'rainbow'
+        RAINBOW: 'rainbow',
+        SEALED: 'sealed'
     };
 
     const scoreHistoryList = document.getElementById('score-history-list');
@@ -57,21 +58,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let isProcessing = false;
     let currentDifficulty = 'normal';
     let scoreHistory = [];
+    let bombPendingCreation = false;
+    let isSealedPanelMode = false;
 
     // --- Game Setup ---
 
     function setDifficulty(level) {
         currentDifficulty = level;
         [normalBtn, hardBtn].forEach(btn => btn.classList.remove('selected'));
-        if (level === 'normal') normalBtn.classList.add('selected');
-        else if (level === 'hard') hardBtn.classList.add('selected');
-
-        let colorCount;
-        switch (level) {
-            case 'hard': colorCount = 5; break;
-            case 'normal':
-            default: colorCount = 4; break;
+        if (level === 'normal') {
+            normalBtn.classList.add('selected');
+            isSealedPanelMode = false;
+        } else if (level === 'hard') {
+            hardBtn.classList.add('selected');
+            isSealedPanelMode = true;
         }
+
+        let colorCount = 4; // 常に4色
         colors = Object.keys(colorMap).slice(0, colorCount);
         startGame();
     }
@@ -197,31 +200,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const type2 = panel2.dataset.type;
         let matches = new Set();
         let totalChain = 0;
+        let fromSpecialEffect = false;
 
-        if (type1 !== panelTypes.NORMAL || type2 !== panelTypes.NORMAL) {
+        if (type1 === panelTypes.BOMB || type1 === panelTypes.RAINBOW || type2 === panelTypes.BOMB || type2 === panelTypes.RAINBOW) {
             clicks--;
             updateInfo();
             if (type1 === panelTypes.BOMB && type2 === panelTypes.BOMB) {
-                totalChain = await handleBombBomb(panel1, panel2);
+                ({ chain: totalChain, fromSpecialEffect } = await handleBombBomb(panel1, panel2));
             } else if (type1 === panelTypes.RAINBOW && type2 === panelTypes.RAINBOW) {
-                totalChain = await handleRainbowRainbow(panel1, panel2);
+                ({ chain: totalChain, fromSpecialEffect } = await handleRainbowRainbow(panel1, panel2));
             } else if ((type1 === panelTypes.BOMB && type2 === panelTypes.RAINBOW) || (type1 === panelTypes.RAINBOW && type2 === panelTypes.BOMB)) {
-                totalChain = await handleBombRainbow(panel1, panel2);
+                ({ chain: totalChain, fromSpecialEffect } = await handleBombRainbow(panel1, panel2));
             } else if (type1 === panelTypes.BOMB) {
-                totalChain = await handleBomb(panel1);
+                ({ chain: totalChain, fromSpecialEffect } = await handleBomb(panel1));
             } else if (type2 === panelTypes.BOMB) {
-                totalChain = await handleBomb(panel2);
+                ({ chain: totalChain, fromSpecialEffect } = await handleBomb(panel2));
             } else if (type1 === panelTypes.RAINBOW) {
-                totalChain = await handleRainbow(panel1, panel2.dataset.colorName);
+                ({ chain: totalChain, fromSpecialEffect } = await handleRainbow(panel1, panel2.dataset.colorName));
             } else if (type2 === panelTypes.RAINBOW) {
-                totalChain = await handleRainbow(panel2, panel1.dataset.colorName);
+                ({ chain: totalChain, fromSpecialEffect } = await handleRainbow(panel2, panel1.dataset.colorName));
             }
         } else {
             matches = checkForMatches();
             if (matches.size > 0) {
                 clicks--;
                 updateInfo();
-                totalChain = await handleMatches(matches, 1, panel1, panel2);
+                ({ chain: totalChain, fromSpecialEffect } = await handleMatches(matches, 1, panel1, panel2, false));
             } else {
                 await swapPanels(panel1, panel2); // Swap back
             }
@@ -238,16 +242,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clicks <= 0 && gameOverEl.classList.contains('hidden')) {
             endGame();
         }
+
+        if (bombPendingCreation) {
+            const normalPanels = panelElements.flat().filter(p => p && p.dataset.type === panelTypes.NORMAL);
+            if (normalPanels.length > 0) {
+                const randomPanel = normalPanels[Math.floor(Math.random() * normalPanels.length)];
+                setPanel(randomPanel, '', panelTypes.BOMB);
+            }
+            bombPendingCreation = false;
+        }
+
         isProcessing = false;
     }
 
-    async function handleMatches(matches, chain, swipedPanel1, swipedPanel2) {
+    async function handleMatches(matches, chain, swipedPanel1, swipedPanel2, isSpecialPanelEffect = false) {
         const matchSize = matches.size;
         
-        if (matchSize >= 5 && swipedPanel1) {
-            const swipedPanel = Array.from(matches).includes(swipedPanel1) ? swipedPanel1 : swipedPanel2;
-            setPanel(swipedPanel, '', panelTypes.BOMB);
-            matches.delete(swipedPanel);
+        if (matchSize >= 5) {
+            if (swipedPanel1) {
+                const swipedPanel = Array.from(matches).includes(swipedPanel1) ? swipedPanel1 : swipedPanel2;
+                setPanel(swipedPanel, '', panelTypes.BOMB);
+                matches.delete(swipedPanel);
+            } else if (!isSpecialPanelEffect) {
+                bombPendingCreation = true;
+            }
         }
 
         matchSound.play();
@@ -256,7 +274,18 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => board.classList.remove('chain-effect'), 500);
         }
 
-        const scoreToAdd = matchSize * chain;
+        let scoreMultiplier = 1;
+        if (currentDifficulty === 'normal') {
+            scoreMultiplier = 1 + (chain - 1) * 0.2; // 例: 1連鎖:1倍, 2連鎖:1.2倍, 3連鎖:1.4倍
+        } else if (currentDifficulty === 'hard') {
+            if (chain <= 2) {
+                scoreMultiplier = 1 + (chain - 1) * 0.2; // 1-2連鎖は「普通」と同じ倍率
+            } else {
+                // 3連鎖以上で加速
+                scoreMultiplier = (1 + (2 - 1) * 0.2) + (chain - 2) * 0.6; // 2連鎖目の倍率を基準に加算
+            }
+        }
+        const scoreToAdd = matchSize * scoreMultiplier;
         score += scoreToAdd;
         updateInfo();
         if (scoreToAdd > 0) {
@@ -270,9 +299,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newMatches = checkForMatches();
         if (newMatches.size > 0) {
-            return await handleMatches(newMatches, chain + 1, null, null);
+            return await handleMatches(newMatches, chain + 1, null, null, isSpecialPanelEffect);
         }
-        return chain; // Return the final chain count
+        // 封印パネル生成ロジック
+        if (isSealedPanelMode && matches.size > 0) { // 何らかのパネルが消えた場合
+            const normalPanels = panelElements.flat().filter(p => p && p.dataset.type === panelTypes.NORMAL);
+            if (normalPanels.length > 0) {
+                // Shuffle the array to get random panels
+                const shuffledPanels = normalPanels.sort(() => 0.5 - Math.random());
+                const panelsToSeal = shuffledPanels.slice(0, 2); // Get the first two
+                panelsToSeal.forEach(panel => {
+                    setPanel(panel, '', panelTypes.SEALED);
+                });
+            }
+        }
+        return { chain: chain, fromSpecialEffect: isSpecialPanelEffect }; // Return the final chain count and special effect status
     }
 
     // --- Special Handlers ---
@@ -288,7 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        return await handleMatches(panelsToClear, 1, null, null);
+        const { chain, fromSpecialEffect } = await handleMatches(panelsToClear, 1, null, null, true);
+        return { chain, fromSpecialEffect };
     }
 
     async function handleRainbow(rainbowPanel, color) {
@@ -299,7 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 panelsToClear.add(p);
             }
         });
-        return await handleMatches(panelsToClear, 1, null, null);
+        const { chain, fromSpecialEffect } = await handleMatches(panelsToClear, 1, null, null, true);
+        return { chain, fromSpecialEffect };
     }
 
     async function handleBombBomb(panel1, panel2) {
@@ -309,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
         score += scoreToAdd;
         updateInfo();
         showScorePopup(scoreToAdd, parseInt(panel1.dataset.row), parseInt(panel1.dataset.col));
-        return await handleMatches(panelsToClear, 1, null, null);
+        const { chain, fromSpecialEffect } = await handleMatches(panelsToClear, 1, null, null, true);
+        return { chain, fromSpecialEffect };
     }
     async function handleRainbowRainbow(panel1, panel2) {
         rainbowSound.play();
@@ -376,15 +420,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function removeMatches(matches) {
         return new Promise(resolve => {
+            const panelsToRemove = [];
+            const panelsToUnseal = new Set();
+
             matches.forEach(panel => {
                 if(panel) {
+                    panelsToRemove.push(panel);
                     panel.classList.add('matched');
                     panel.dataset.colorName = '';
+
+                    // Check neighbors for sealed panels
+                    const r = parseInt(panel.dataset.row);
+                    const c = parseInt(panel.dataset.col);
+                    getNeighbors(r, c).forEach(neighbor => {
+                        if (neighbor && neighbor.dataset.type === panelTypes.SEALED) {
+                            panelsToUnseal.add(neighbor);
+                        }
+                    });
                 }
             });
 
             setTimeout(() => {
-                matches.forEach(panel => {
+                panelsToRemove.forEach(panel => {
                     if (panel && panel.parentNode === board) {
                         board.removeChild(panel);
                         const r = parseInt(panel.dataset.row);
@@ -392,9 +449,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         panelElements[r][c] = null;
                     }
                 });
+
+                panelsToUnseal.forEach(panel => {
+                    if (panel) {
+                        setPanel(panel, getRandomColor(), panelTypes.NORMAL); // Unseal and give a random color
+                    }
+                });
                 resolve();
             }, 400);
         });
+    }
+
+    // Helper function to get adjacent panels
+    function getNeighbors(row, col) {
+        const neighbors = [];
+        const directions = [
+            { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+            { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+        ];
+
+        directions.forEach(dir => {
+            const newRow = row + dir.dr;
+            const newCol = col + dir.dc;
+            if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
+                const neighborPanel = panelElements[newRow][newCol];
+                if (neighborPanel) {
+                    neighbors.push(neighborPanel);
+                }
+            }
+        });
+        return neighbors;
     }
 
     async function dropPanels() {
@@ -443,14 +527,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UI Update ---
 
     function updateInfo() {
-        scoreEl.textContent = score;
+        scoreEl.textContent = Math.round(score);
         clicksEl.textContent = clicks;
     }
 
     function showScorePopup(amount, row, col) {
         const popup = document.createElement('div');
         popup.classList.add('score-popup');
-        popup.textContent = `+${amount}`;
+        popup.textContent = `+${Math.round(amount)}`;
         const currentPanelSize = getPanelSize();
         popup.style.left = `${col * currentPanelSize + currentPanelSize / 2}px`;
         popup.style.top = `${row * currentPanelSize + currentPanelSize / 2}px`;
@@ -464,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endGame() {
         isProcessing = true;
         scoreSound.play();
-        finalScoreEl.textContent = score;
+        finalScoreEl.textContent = Math.round(score);
         gameOverEl.classList.remove('hidden');
         addScoreToHistory(score, currentDifficulty);
     }
@@ -492,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreHistoryList.innerHTML = '';
         scoreHistory.forEach(entry => {
             const li = document.createElement('li');
-            li.textContent = `${entry.date} - ${entry.difficulty}: ${entry.score}点`;
+            li.textContent = `${entry.date} - ${entry.difficulty}: ${Math.round(entry.score)}点`;
             scoreHistoryList.appendChild(li);
         });
     }
